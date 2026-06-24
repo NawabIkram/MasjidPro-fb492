@@ -19,6 +19,7 @@ import {
   ReceiptText,
   Repeat2,
   HandCoins,
+  Rocket,
   UserRound,
   UsersRound,
   WalletCards,
@@ -29,6 +30,7 @@ import { AiAssistant } from "./AiAssistant";
 
 const adminNavItems = [
   { to: "/dashboard", label: "Dashboard", mobileLabel: "Home", icon: LayoutDashboard },
+  { to: "/launch", label: "Launch", mobileLabel: "Launch", icon: Rocket },
   { to: "/donations", label: "Donations", mobileLabel: "Giving", icon: WalletCards },
   { to: "/zakat", label: "Zakat", mobileLabel: "Zakat", icon: Calculator },
   { to: "/prayer-times", label: "Prayer Times", mobileLabel: "Prayer", icon: Moon },
