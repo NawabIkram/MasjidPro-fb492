@@ -94,34 +94,6 @@ export type PricingPlan = {
   highlighted?: boolean;
 };
 
-export type BetaClient = {
-  id: string;
-  masjidName: string;
-  country: string;
-  contact: string;
-  stage: "Beta" | "Trial" | "Paid" | "At Risk";
-  plan: PricingPlan["id"];
-  monthlyValue: number;
-  lastContact: string;
-  nextAction: string;
-};
-
-export type OutreachChannel = {
-  id: string;
-  name: string;
-  sent: number;
-  replies: number;
-  demosBooked: number;
-  conversionRate: number;
-};
-
-export type LaunchMetric = {
-  label: string;
-  value: string;
-  target: string;
-  progress: number;
-};
-
 export type DemoScenario = {
   id: string;
   title: string;
