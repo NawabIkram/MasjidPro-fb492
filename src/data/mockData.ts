@@ -4,12 +4,9 @@ import type {
   Campaign,
   Donation,
   Donor,
-  BetaClient,
   FundBreakdown,
   DemoScenario,
-  LaunchMetric,
   Masjid,
-  OutreachChannel,
   PrayerTime,
   PricingPlan,
   ReportMetric,
@@ -266,7 +263,7 @@ export const pricingPlans: PricingPlan[] = [
     id: "growth",
     name: "Growth",
     price: 99,
-    description: "The Phase 2 target plan for beta conversion and first paying clients.",
+    description: "For growing Islamic centers that need recurring donations, reports, and AI support.",
     bestFor: "Growing Islamic centers",
     features: [
       "Everything in Starter",
@@ -294,67 +291,6 @@ export const pricingPlans: PricingPlan[] = [
   },
 ];
 
-export const launchMetrics: LaunchMetric[] = [
-  { label: "Paying clients", value: "12", target: "20 by Month 4", progress: 60 },
-  { label: "MRR", value: "$1,188", target: "$2,000 target", progress: 59 },
-  { label: "Demos booked", value: "31", target: "40 target", progress: 78 },
-  { label: "Beta conversions", value: "4", target: "6 target", progress: 67 },
-];
-
-export const betaClients: BetaClient[] = [
-  {
-    id: "client-1",
-    masjidName: "Masjid Al-Furqan",
-    country: "USA",
-    contact: "Imam Abdullah",
-    stage: "Paid",
-    plan: "growth",
-    monthlyValue: 99,
-    lastContact: "Jun 15",
-    nextAction: "Ask for testimonial and case study approval",
-  },
-  {
-    id: "client-2",
-    masjidName: "Masjid Al-Noor",
-    country: "UK",
-    contact: "Admin Yusuf",
-    stage: "Trial",
-    plan: "starter",
-    monthlyValue: 49,
-    lastContact: "Jun 14",
-    nextAction: "Schedule conversion call with 50% first-month offer",
-  },
-  {
-    id: "client-3",
-    masjidName: "Islamic Center Houston",
-    country: "USA",
-    contact: "Sister Aisha",
-    stage: "Beta",
-    plan: "growth",
-    monthlyValue: 99,
-    lastContact: "Jun 12",
-    nextAction: "Import donors and run donation report demo",
-  },
-  {
-    id: "client-4",
-    masjidName: "North London Islamic Centre",
-    country: "UK",
-    contact: "Trustee Board",
-    stage: "At Risk",
-    plan: "growth",
-    monthlyValue: 99,
-    lastContact: "Jun 10",
-    nextAction: "Send recorded demo and address data privacy concern",
-  },
-];
-
-export const outreachChannels: OutreachChannel[] = [
-  { id: "email", name: "Cold Email", sent: 500, replies: 38, demosBooked: 14, conversionRate: 7.6 },
-  { id: "linkedin", name: "LinkedIn", sent: 280, replies: 31, demosBooked: 9, conversionRate: 11.1 },
-  { id: "facebook", name: "Facebook Groups", sent: 42, replies: 18, demosBooked: 5, conversionRate: 42.8 },
-  { id: "referral", name: "Beta Referrals", sent: 16, replies: 10, demosBooked: 3, conversionRate: 62.5 },
-];
-
 export const demoScenarios: DemoScenario[] = [
   {
     id: "donations-demo",
@@ -374,7 +310,7 @@ export const demoScenarios: DemoScenario[] = [
     id: "board-demo",
     title: "Monthly board report",
     audience: "Masjid trustees",
-    outcome: "Show MRR-style donation insights, fund breakdown, top donors, and export buttons.",
+    outcome: "Review donation insights, fund breakdown, top donors, and export buttons.",
     steps: ["Open reports", "Review donation chart", "Show fund distribution", "Export PDF"],
   },
 ];
