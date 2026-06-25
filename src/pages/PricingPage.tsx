@@ -18,8 +18,8 @@ export function PricingPage() {
 
       <section className="public-heading">
         <span className="eyebrow">Paid plans</span>
-        <h1>Simple pricing for the first 20 paying masjids.</h1>
-        <p>Phase 2 target: convert beta users, publish pricing, and reach $1,000-$2,000 MRR.</p>
+        <h1>Simple pricing for masjid teams.</h1>
+        <p>Choose the right plan for donations, receipts, announcements, reports, and donor care.</p>
       </section>
 
       <section className="pricing-grid">
