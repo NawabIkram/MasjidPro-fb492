@@ -17,9 +17,9 @@ export function DemoPage() {
       </nav>
 
       <section className="public-heading">
-        <span className="eyebrow">Interactive demo</span>
-        <h1>Show the exact workflows that close Phase 2 clients.</h1>
-        <p>No login required. Use these demo paths in calls with masjid directors and trustee boards.</p>
+        <span className="eyebrow">Interactive product tour</span>
+        <h1>Explore everyday workflows for masjid administrators.</h1>
+        <p>No login required. Preview how donations, announcements, and reports work in MasjidPro.</p>
       </section>
 
       <section className="demo-grid">
