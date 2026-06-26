@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect } from "react";
 import { Bot, Copy, Send, Sparkles, X, Loader2 } from "lucide-react";
-import { generateAIContent } from "../lib/gemini";
 import { useLanguage } from "../i18n/i18n";
+import { askAssistant } from "../services/api";
 
 const prompts = [
   "Generate Ramadan fundraising message",
@@ -39,11 +39,11 @@ export function AiAssistant() {
     setIsGenerating(true);
 
     try {
-      // Pass previous chat history context to gemini (rudimentary implementation)
+      // Pass previous chat history context to the backend assistant.
       const chatContext = messages.map(m => `${m.role === 'user' ? 'Admin' : 'Assistant'}: ${m.text}`).join('\n');
       const fullPrompt = `${chatContext ? `Previous Chat:\n${chatContext}\n\n` : ''}Admin: ${text}\nAssistant:`;
 
-      const responseText = await generateAIContent(fullPrompt);
+      const responseText = await askAssistant(fullPrompt);
       const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "assistant", text: responseText };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error: any) {
@@ -77,8 +77,7 @@ export function AiAssistant() {
                 <div className="ai-message" style={{ margin: 0 }}>
                   <Sparkles size={16} />
                   <p>
-                    I am powered by the Gemini API and have live access to your dashboard data.
-                    Ask me anything about donations, events, or staff!
+                    I can use backend dashboard data to help with donations, announcements, and giving trends.
                   </p>
                 </div>
                 <div className="prompt-grid" style={{ marginTop: '0.5rem' }}>
