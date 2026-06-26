@@ -15,11 +15,13 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { masjids } from "../data/mockData";
+import { Toast } from "../components/ui";
 
 type AuthTab = "signin" | "masjid" | "donor";
 
 export function LoginPage() {
   const [activeTab, setActiveTab] = useState<AuthTab>("signin");
+  const [toast, setToast] = useState("");
 
   return (
     <main className="login-page">
@@ -55,15 +57,22 @@ export function LoginPage() {
           </button>
         </div>
 
-        {activeTab === "signin" ? <SignInForm /> : null}
+        {activeTab === "signin" ? <SignInForm setActiveTab={setActiveTab} setToast={setToast} /> : null}
         {activeTab === "masjid" ? <MasjidRegistrationForm /> : null}
         {activeTab === "donor" ? <DonorRegistrationForm /> : null}
       </section>
+      {toast ? <Toast message={toast} onClose={() => setToast("")} /> : null}
     </main>
   );
 }
 
-function SignInForm() {
+function SignInForm({
+  setActiveTab,
+  setToast,
+}: {
+  setActiveTab: (tab: AuthTab) => void;
+  setToast: (message: string) => void;
+}) {
   return (
     <>
       <label>
@@ -82,7 +91,7 @@ function SignInForm() {
       </label>
       <div className="login-options">
         <label><input type="checkbox" defaultChecked /> Remember this device</label>
-        <a href="#">Forgot password?</a>
+        <button type="button" onClick={() => setToast("Password reset link sent to your email.")}>Forgot password?</button>
       </div>
       <Link className="primary-button full" to="/dashboard">
         Sign In as Admin
@@ -91,10 +100,10 @@ function SignInForm() {
       <Link className="secondary-button full" to="/donor-portal">
         Continue as Donor
       </Link>
-      <button className="secondary-button full" type="button">Continue with Google</button>
+      <button className="secondary-button full" type="button" onClick={() => setToast("Google sign-in is ready for provider connection.")}>Continue with Google</button>
       <div className="auth-ctas">
-        <span>New Masjid? Register your Masjid</span>
-        <span>Donor? Create donor account</span>
+        <button type="button" onClick={() => setActiveTab("masjid")}>New Masjid? Register your Masjid</button>
+        <button type="button" onClick={() => setActiveTab("donor")}>Donor? Create donor account</button>
       </div>
     </>
   );
