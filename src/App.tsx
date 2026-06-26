@@ -10,6 +10,7 @@ import { DonorsPage } from "./pages/DonorsPage";
 import { EventsPage } from "./pages/EventsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MarketingPage } from "./pages/MarketingPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { PrayerTimesPage } from "./pages/PrayerTimesPage";
 import { PricingPage } from "./pages/PricingPage";
 import { ReportsPage } from "./pages/ReportsPage";
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/recurring" element={<DonorPortalPage view="recurring" />} />
           <Route path="/profile" element={<DonorPortalPage view="profile" />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </LanguageProvider>
   );
