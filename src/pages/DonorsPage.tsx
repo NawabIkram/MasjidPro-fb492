@@ -1,10 +1,43 @@
+import { useMemo, useState } from "react";
 import { Mail, Phone, Repeat2, UserRound } from "lucide-react";
-import { Badge, Card, EmptyState, SectionHeader } from "../components/ui";
+import { Badge, Card, EmptyState, Modal, SectionHeader, Toast } from "../components/ui";
 import { donors } from "../data/mockData";
+import type { Donor, FundType } from "../types";
 import { currency } from "../utils/format";
 
 export function DonorsPage() {
-  const activeDonor = donors[0];
+  const [records, setRecords] = useState<Donor[]>(donors);
+  const [activeDonorId, setActiveDonorId] = useState(donors[0].id);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [toast, setToast] = useState("");
+  const [newDonor, setNewDonor] = useState({
+    name: "New Donor",
+    email: "new.donor@email.com",
+    phone: "+1 713 555 0100",
+    fundPreference: "General" as FundType,
+  });
+  const activeDonor = useMemo(
+    () => records.find((donor) => donor.id === activeDonorId) ?? records[0],
+    [activeDonorId, records],
+  );
+
+  function addDonor() {
+    const donor: Donor = {
+      id: `donor-${Date.now()}`,
+      name: newDonor.name,
+      email: newDonor.email,
+      phone: newDonor.phone,
+      lifetimeDonations: 0,
+      lastDonation: "No donations yet",
+      recurring: false,
+      fundPreference: newDonor.fundPreference,
+      history: [],
+    };
+    setRecords((current) => [donor, ...current]);
+    setActiveDonorId(donor.id);
+    setShowAddModal(false);
+    setToast("Donor profile created.");
+  }
 
   return (
     <div className="page-stack">
@@ -13,7 +46,7 @@ export function DonorsPage() {
           <span className="eyebrow">Donor CRM</span>
           <h1>Understand giving patterns and keep donor relationships organized.</h1>
         </div>
-        <button className="primary-button" type="button">
+        <button className="primary-button" type="button" onClick={() => setShowAddModal(true)}>
           <UserRound size={18} />
           Add Donor
         </button>
@@ -23,15 +56,15 @@ export function DonorsPage() {
         <Card>
           <SectionHeader title="Donor Profiles" eyebrow="Community CRM" />
           <div className="donor-list">
-            {donors.map((donor) => (
-              <div className={donor.id === activeDonor.id ? "donor-row active" : "donor-row"} key={donor.id}>
+            {records.map((donor) => (
+              <button className={donor.id === activeDonor.id ? "donor-row active" : "donor-row"} key={donor.id} type="button" onClick={() => setActiveDonorId(donor.id)}>
                 <div className="avatar small">{donor.name.slice(0, 2).toUpperCase()}</div>
                 <div>
                   <strong>{donor.name}</strong>
                   <span>{donor.email}</span>
                 </div>
                 {donor.recurring ? <Badge tone="green">Recurring</Badge> : <Badge>One-time</Badge>}
-              </div>
+              </button>
             ))}
           </div>
         </Card>
@@ -83,6 +116,21 @@ export function DonorsPage() {
           </div>
         )}
       </Card>
+      {showAddModal ? (
+        <Modal title="Add Donor" description="Create a lightweight donor CRM profile." onClose={() => setShowAddModal(false)}>
+          <div className="form-grid two">
+            <label><span>Name</span><input value={newDonor.name} onChange={(event) => setNewDonor((current) => ({ ...current, name: event.target.value }))} /></label>
+            <label><span>Email</span><input value={newDonor.email} onChange={(event) => setNewDonor((current) => ({ ...current, email: event.target.value }))} /></label>
+            <label><span>Phone</span><input value={newDonor.phone} onChange={(event) => setNewDonor((current) => ({ ...current, phone: event.target.value }))} /></label>
+            <label><span>Fund preference</span><select value={newDonor.fundPreference} onChange={(event) => setNewDonor((current) => ({ ...current, fundPreference: event.target.value as FundType }))}><option>Zakat</option><option>Sadaqah</option><option>General</option><option>Building</option></select></label>
+          </div>
+          <div className="button-row end">
+            <button className="secondary-button" type="button" onClick={() => setShowAddModal(false)}>Cancel</button>
+            <button className="primary-button" type="button" onClick={addDonor}>Create Donor</button>
+          </div>
+        </Modal>
+      ) : null}
+      {toast ? <Toast message={toast} onClose={() => setToast("")} /> : null}
     </div>
   );
 }
