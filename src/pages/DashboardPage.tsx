@@ -14,8 +14,8 @@
   Clock,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   announcements,
   auditLog,
@@ -30,7 +30,8 @@ import { downloadTextFile } from "../utils/downloads";
 import { currency, percent } from "../utils/format";
 import { Badge, Card, EmptyState, LoadingSkeleton, ProgressBar, SectionHeader, StatCard, Toast, TrustStrip } from "../components/ui";
 import { useLanguage } from "../i18n/i18n";
-import { generateAIJson } from "../lib/gemini";
+import { getDashboard, type DashboardApiData } from "../services/api";
+import type { Masjid } from "../types";
 
 const quickActions = [
   { label: "Create Announcement", icon: Megaphone, path: "/announcements" },
@@ -42,9 +43,23 @@ const quickActions = [
 export function DashboardPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { activeMasjid } = useOutletContext<{ activeMasjid: Masjid }>();
   const [toast, setToast] = useState("");
-  const nextPrayer = prayerTimes.find((prayer) => prayer.isNext) ?? prayerTimes[0];
-  const campaignPercent = Math.round((campaign.raised / campaign.goal) * 100);
+  const [dashboardData, setDashboardData] = useState<DashboardApiData | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const dashboardFundBreakdown = dashboardData?.fundBreakdown ?? fundBreakdown;
+  const dashboardCampaign = dashboardData?.campaign ?? campaign;
+  const dashboardPrayerTimes = dashboardData?.prayerTimes ?? prayerTimes;
+  const dashboardAnnouncements = dashboardData?.announcements ?? announcements;
+  const dashboardAuditLog = dashboardData?.auditLog ?? auditLog;
+  const dashboardStats = dashboardData?.stats ?? {
+    totalDonations: 18340,
+    zakatTotal: 7240,
+    sadaqahTotal: 4180,
+    recurringDonors: 156,
+  };
+  const nextPrayer = dashboardPrayerTimes.find((prayer) => prayer.isNext) ?? dashboardPrayerTimes[0];
+  const campaignPercent = Math.round((dashboardCampaign.raised / dashboardCampaign.goal) * 100);
 
   const presentStaff = attendanceRecords.filter((r) => r.status === "Present" || r.status === "Late");
   const upcomingEvents = masjidEvents.filter((e) => e.status === "Upcoming").slice(0, 3);
@@ -53,23 +68,40 @@ export function DashboardPage() {
   const [insight, setInsight] = useState<{headline: string, recommendation: string} | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
 
+  useEffect(() => {
+    let mounted = true;
+    setDataLoading(true);
+    getDashboard(activeMasjid.id)
+      .then((data) => {
+        if (mounted) {
+          setDashboardData(data);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setDataLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeMasjid.id]);
+
   function handleQuickAction(action: typeof quickActions[0]) {
     if (action.path) navigate(action.path);
   }
 
   async function generateInsight() {
     setInsightLoading(true);
-    try {
-      const result = await generateAIJson<{headline: string, recommendation: string}>(
-        "Analyze the dashboard metrics and provide a single critical insight and an actionable recommendation.",
-        `{ "headline": "A short 1-sentence insight (e.g. Donations are down 15% this week)", "recommendation": "A 1-sentence actionable suggestion" }`
-      );
-      setInsight(result);
-    } catch (error) {
-      setToast("Failed to generate AI insight.");
-    } finally {
-      setInsightLoading(false);
-    }
+    const result =
+      dashboardData?.insight ??
+      {
+        headline: "Zakat giving is leading current fund activity.",
+        recommendation: "Send a Friday reminder focused on recurring Sadaqah and transparent receipts.",
+      };
+    setInsight(result);
+    setInsightLoading(false);
   }
 
   return (
@@ -87,8 +119,8 @@ export function DashboardPage() {
               "masjidpro-board-summary.txt",
               [
                 "MasjidPro Board Summary",
-                `Campaign: ${campaign.name}`,
-                `Raised: ${currency(campaign.raised)} of ${currency(campaign.goal)}`,
+                `Campaign: ${dashboardCampaign.name}`,
+                `Raised: ${currency(dashboardCampaign.raised)} of ${currency(dashboardCampaign.goal)}`,
                 `Next Prayer: ${nextPrayer.name} at ${nextPrayer.adhan}`,
                 "Insight: Focus Friday messaging on recurring Sadaqah.",
               ].join("\n"),
@@ -101,18 +133,20 @@ export function DashboardPage() {
         </button>
       </div>
 
+      {dataLoading ? <LoadingSkeleton rows={1} /> : null}
+
       <div className="stats-grid four">
-        <StatCard title={t("dash_totalDonations")} value={currency(18340)} change="+24% this month" icon={WalletCards} />
-        <StatCard title={t("dash_zakatFund")} value={currency(7240)} change="+18% this month" icon={ShieldCheck} tone="gold" />
-        <StatCard title={t("dash_sadaqahFund")} value={currency(4180)} change="+9% this month" icon={WalletCards} />
-        <StatCard title={t("dash_recurringDonors")} value="156" change="+12 donors" icon={BarChart3} tone="blue" />
+        <StatCard title={t("dash_totalDonations")} value={currency(dashboardStats.totalDonations)} change="+24% this month" icon={WalletCards} />
+        <StatCard title={t("dash_zakatFund")} value={currency(dashboardStats.zakatTotal)} change="+18% this month" icon={ShieldCheck} tone="gold" />
+        <StatCard title={t("dash_sadaqahFund")} value={currency(dashboardStats.sadaqahTotal)} change="+9% this month" icon={WalletCards} />
+        <StatCard title={t("dash_recurringDonors")} value={String(dashboardStats.recurringDonors)} change="+12 donors" icon={BarChart3} tone="blue" />
       </div>
 
       <div className="dashboard-grid">
         <Card>
           <SectionHeader title={t("dash_fundBreakdown")} eyebrow={t("dash_liveAllocation")} />
           <div className="fund-list">
-            {fundBreakdown.map((fund) => (
+            {dashboardFundBreakdown.map((fund) => (
               <div className="fund-row" key={fund.fund}>
                 <div>
                   <strong>{fund.fund} Fund</strong>
@@ -128,15 +162,15 @@ export function DashboardPage() {
         </Card>
 
         <Card className="campaign-card">
-          <SectionHeader title={campaign.name} eyebrow={t("dash_donationGoal")} />
+          <SectionHeader title={dashboardCampaign.name} eyebrow={t("dash_donationGoal")} />
           <div className="campaign-amount">
-            <strong>{currency(campaign.raised)}</strong>
-            <span>raised of {currency(campaign.goal)}</span>
+            <strong>{currency(dashboardCampaign.raised)}</strong>
+            <span>raised of {currency(dashboardCampaign.goal)}</span>
           </div>
           <ProgressBar value={campaignPercent} label="Campaign progress" />
           <div className="campaign-footer">
             <Badge tone="gold">{campaignPercent}% complete</Badge>
-            <span>{campaign.dueDate}</span>
+            <span>{dashboardCampaign.dueDate}</span>
           </div>
           <button className="secondary-button" type="button" onClick={() => navigate("/donate")}>{t("dash_viewCampaign")}</button>
         </Card>
@@ -163,7 +197,7 @@ export function DashboardPage() {
             <p>Iqamah at {nextPrayer.iqamah}</p>
           </div>
           <div className="mini-prayer-list">
-            {prayerTimes.map((prayer) => (
+            {dashboardPrayerTimes.map((prayer) => (
               <div className={prayer.isNext ? "mini-prayer next" : "mini-prayer"} key={prayer.name}>
                 <span>{prayer.name}</span>
                 <strong>{prayer.adhan}</strong>
@@ -240,7 +274,7 @@ export function DashboardPage() {
         <Card>
           <SectionHeader title={t("dash_recentAnnouncements")} action={<button className="text-button" type="button" onClick={() => navigate("/announcements")}>{t("viewAll")}</button>} />
           <div className="announcement-list">
-            {announcements.map((announcement) => (
+            {dashboardAnnouncements.map((announcement) => (
               <div className="announcement-item" key={announcement.id}>
                 <div>
                   <strong>{announcement.title}</strong>
@@ -257,7 +291,7 @@ export function DashboardPage() {
         <Card>
           <SectionHeader title={t("dash_activityLog")} eyebrow={t("dash_auditTrail")} />
           <div className="activity-list">
-            {auditLog.map((entry) => (
+            {dashboardAuditLog.map((entry) => (
               <div className="activity-item" key={entry.id}>
                 <span>{entry.time}</span>
                 <div>
