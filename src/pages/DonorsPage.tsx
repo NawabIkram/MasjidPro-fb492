@@ -90,30 +90,47 @@ export function DonorsPage() {
         {activeDonor.history.length === 0 ? (
           <EmptyState title="No donations yet" description="This donor has not made a recorded donation." />
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Donation ID</th>
-                  <th>Fund</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeDonor.history.map((donation) => (
-                  <tr key={donation.id}>
-                    <td>{donation.id}</td>
-                    <td>{donation.fund}</td>
-                    <td>{currency(donation.amount)}</td>
-                    <td>{donation.date}</td>
-                    <td><Badge tone="green">{donation.status}</Badge></td>
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Donation ID</th>
+                    <th>Fund</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {activeDonor.history.map((donation) => (
+                    <tr key={donation.id}>
+                      <td>{donation.id}</td>
+                      <td>{donation.fund}</td>
+                      <td>{currency(donation.amount)}</td>
+                      <td>{donation.date}</td>
+                      <td><Badge tone="green">{donation.status}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mobile-list">
+              {activeDonor.history.map((donation) => (
+                <div className="mobile-record" key={donation.id}>
+                  <div>
+                    <strong>{donation.id}</strong>
+                    <span>{donation.date}</span>
+                  </div>
+                  <Badge tone="green">{donation.status}</Badge>
+                  <dl>
+                    <div><dt>Fund</dt><dd>{donation.fund}</dd></div>
+                    <div><dt>Amount</dt><dd>{currency(donation.amount)}</dd></div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Card>
       {showAddModal ? (
