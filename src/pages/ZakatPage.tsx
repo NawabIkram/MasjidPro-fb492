@@ -3,6 +3,7 @@ import { Calculator, CreditCard, Info, ReceiptText } from "lucide-react";
 import { Badge, Card, ProgressBar, SectionHeader, Toast, TrustStrip } from "../components/ui";
 import { downloadSimplePdf } from "../utils/downloads";
 import { currency } from "../utils/format";
+import { calculateZakat, type ZakatCalculation } from "../services/api";
 
 const fields = [
   { key: "cash", label: "Cash & Bank Savings" },
@@ -17,6 +18,7 @@ type FieldKey = (typeof fields)[number]["key"];
 
 export function ZakatPage() {
   const [toast, setToast] = useState("");
+  const [serverTotals, setServerTotals] = useState<ZakatCalculation | null>(null);
   const [values, setValues] = useState<Record<FieldKey, number>>({
     cash: 8500,
     gold: 4200,
@@ -26,15 +28,22 @@ export function ZakatPage() {
     debts: 1800,
   });
 
-  const totals = useMemo(() => {
+  const nisab = 6200;
+  const localTotals = useMemo(() => {
     const assets = values.cash + values.gold + values.silver + values.investments + values.business;
     const net = Math.max(assets - values.debts, 0);
     const due = net * 0.025;
-    return { assets, net, due };
+    return { assets, debts: values.debts, net, due, rate: 0.025, nisab, aboveNisab: net >= nisab };
   }, [values]);
 
-  const nisab = 6200;
+  const totals = serverTotals ?? localTotals;
   const aboveNisab = totals.net >= nisab;
+
+  async function handleRecalculate() {
+    const result = await calculateZakat(values);
+    setServerTotals(result);
+    setToast(`Zakat recalculated by backend: ${currency(result.due)} due.`);
+  }
 
   function recordPayment() {
     downloadSimplePdf("masjidpro-zakat-record.pdf", "MasjidPro Zakat Record", [
@@ -70,17 +79,18 @@ export function ZakatPage() {
                 <input
                   type="number"
                   value={values[field.key]}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    setServerTotals(null);
                     setValues((current) => ({
                       ...current,
                       [field.key]: Number(event.target.value),
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </label>
             ))}
           </div>
-          <button className="secondary-button full" type="button" onClick={() => setToast(`Zakat recalculated: ${currency(totals.due)} due.`)}>
+          <button className="secondary-button full" type="button" onClick={handleRecalculate}>
             <Calculator size={18} />
             Recalculate Zakat
           </button>
