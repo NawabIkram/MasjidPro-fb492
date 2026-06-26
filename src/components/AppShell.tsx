@@ -67,6 +67,7 @@ export function AppShell() {
   const [activeRole, setActiveRole] = useState<UserRole>(startsAsDonor ? "donor" : "admin");
   const [activeMasjid, setActiveMasjid] = useState<Masjid>(masjids[0]);
   const [showSearch, setShowSearch] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [toast, setToast] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const navItems = activeRole === "admin" ? adminNavItems : donorNavItems;
@@ -116,7 +117,7 @@ export function AppShell() {
           >
             {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
           </button>
-          <button className="icon-button mobile-only" type="button" aria-label={t("openMenu")} onClick={() => setToast("Use the bottom navigation to switch sections on mobile.")}>
+          <button className="icon-button mobile-only" type="button" aria-label={t("openMenu")} onClick={() => setShowMobileMenu(true)}>
             <Menu size={20} />
           </button>
           <div className="page-heading">
@@ -202,6 +203,69 @@ export function AppShell() {
       </nav>
 
       <AiAssistant />
+      {showMobileMenu ? (
+        <div className="mobile-menu-backdrop" role="presentation" onClick={() => setShowMobileMenu(false)}>
+          <section className="mobile-menu-panel" role="dialog" aria-modal="true" aria-label="Mobile menu" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="eyebrow">{activeMasjid.name}</span>
+                <h2>{activeRole === "admin" ? t("adminSuite") : t("donorPortal")}</h2>
+              </div>
+              <button className="icon-button" type="button" aria-label="Close menu" onClick={() => setShowMobileMenu(false)}>
+                <PanelLeftClose size={18} />
+              </button>
+            </div>
+
+            <div className="mobile-menu-context">
+              <label>
+                <span>{t("masjid")}</span>
+                <select
+                  value={activeMasjid.id}
+                  onChange={(event) => {
+                    const next = masjids.find((masjid) => masjid.id === event.target.value);
+                    if (next) setActiveMasjid(next);
+                  }}
+                >
+                  {masjids.map((masjid) => (
+                    <option key={masjid.id} value={masjid.id}>{masjid.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{t("role")}</span>
+                <select
+                  value={activeRole}
+                  onChange={(event) => {
+                    const nextRole = event.target.value as UserRole;
+                    setActiveRole(nextRole);
+                    navigate(nextRole === "admin" ? "/dashboard" : "/donor-portal");
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <option value="admin">{t("admin")}</option>
+                  <option value="donor">{t("donor")}</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="mobile-menu-search">
+              <Search size={18} />
+              <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search sections" />
+            </label>
+
+            <nav className="mobile-menu-grid" aria-label="All mobile navigation">
+              {navItems
+                .filter((item) => t(item.key as any).toLowerCase().includes(searchQuery.toLowerCase()) || item.to.includes(searchQuery.toLowerCase()))
+                .map((item) => (
+                  <NavLink key={item.to} to={item.to} onClick={() => setShowMobileMenu(false)}>
+                    <item.icon size={18} />
+                    <span>{t(item.key as any)}</span>
+                  </NavLink>
+                ))}
+            </nav>
+          </section>
+        </div>
+      ) : null}
       {showSearch ? (
         <Modal title="Search MasjidPro" description="Jump to a product area by typing a keyword." onClose={() => setShowSearch(false)}>
           <div className="form-grid">
