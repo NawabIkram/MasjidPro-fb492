@@ -23,6 +23,11 @@ const donorEmail = `donor.${suffix}@phase2.test`;
 const health = await call("GET", "/health");
 assert.equal(health.status, 200);
 
+const googleConfig = await call("GET", "/auth/google-config");
+assert.equal(googleConfig.status, 200);
+assert.equal(typeof googleConfig.payload.data.ready, "boolean");
+assert.equal(googleConfig.payload.data.ready, Boolean(googleConfig.payload.data.clientId));
+
 const adminRegistration = await call("POST", "/auth/register-masjid", {
   body: {
     masjidName: "Phase 2 QA Masjid",
