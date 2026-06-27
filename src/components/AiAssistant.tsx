@@ -1,6 +1,7 @@
 ﻿import { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, X, Loader2 } from "lucide-react";
 import { askAssistant } from "../services/api";
+import "./AiAssistant.css";
 
 const prompts = [
   "Generate Ramadan fundraising message",
