@@ -6,7 +6,6 @@ const useNetlifyBlobs = Boolean(process.env.SITE_ID);
 const getBlobStore = () =>
   getStore({
     name: "masjidpro-production",
-    consistency: "strong",
   });
 
 export async function getJSON(key) {
@@ -14,7 +13,7 @@ export async function getJSON(key) {
     return memory.has(key) ? structuredClone(memory.get(key)) : null;
   }
 
-  return getBlobStore().get(key, { consistency: "strong", type: "json" });
+  return getBlobStore().get(key, { type: "json" });
 }
 
 export async function setJSON(key, value, options = {}) {
@@ -49,7 +48,7 @@ export async function listJSON(prefix) {
   const store = getBlobStore();
   const { blobs } = await store.list({ prefix });
   const values = await Promise.all(
-    blobs.map(({ key }) => store.get(key, { consistency: "strong", type: "json" })),
+    blobs.map(({ key }) => store.get(key, { type: "json" })),
   );
   return values.filter(Boolean);
 }
