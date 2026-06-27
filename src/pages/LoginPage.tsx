@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { ElementType } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import {
   ArrowRight,
   Building2,
@@ -10,18 +10,73 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
-  Upload,
   UserRound,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { masjids } from "../data/mockData";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { Toast } from "../components/ui";
+import { getMasjids } from "../services/api";
+import type { DonorRegistrationInput, MasjidRegistrationInput } from "../services/api";
+import type { Masjid } from "../types";
 
 type AuthTab = "signin" | "masjid" | "donor";
 
+const initialMasjid: MasjidRegistrationInput = {
+  masjidName: "",
+  country: "",
+  city: "",
+  address: "",
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Karachi",
+  calculationMethod: "ISNA",
+  asrMethod: "Hanafi",
+  adminName: "",
+  adminEmail: "",
+  password: "",
+};
+
+const initialDonor: DonorRegistrationInput = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  masjidId: "",
+};
+
 export function LoginPage() {
+  const { user, login, registerMasjid, registerDonor } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AuthTab>("signin");
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [masjids, setMasjids] = useState<Masjid[]>([]);
+  const [signin, setSignin] = useState({ email: "", password: "" });
+  const [masjidForm, setMasjidForm] = useState(initialMasjid);
+  const [donorForm, setDonorForm] = useState(initialDonor);
+
+  useEffect(() => {
+    if (user) navigate(user.role === "admin" ? "/dashboard" : "/donor-portal", { replace: true });
+  }, [navigate, user]);
+
+  useEffect(() => {
+    getMasjids().then((records) => {
+      setMasjids(records);
+      setDonorForm((current) => ({ ...current, masjidId: current.masjidId || records[0]?.id || "" }));
+    });
+  }, []);
+
+  const runAuth = async (action: () => Promise<{ role: "admin" | "donor" }>) => {
+    setSubmitting(true);
+    setError("");
+    try {
+      const account = await action();
+      navigate(account.role === "admin" ? "/dashboard" : "/donor-portal", { replace: true });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to complete this request.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <main className="login-page">
@@ -29,13 +84,10 @@ export function LoginPage() {
         <div className="brand-mark large">M</div>
         <span className="eyebrow">MasjidPro AI</span>
         <h1>Modern masjid operations for admins and donors.</h1>
-        <p>
-          Register a masjid workspace, manage donations and prayer times, or let donors give and
-          download receipts from a clean secure portal.
-        </p>
+        <p>Register a workspace, manage giving and prayer times, or access donor receipts through one secure account.</p>
         <div className="login-trust">
           <ShieldCheck size={18} />
-          Stripe secured payments, privacy-ready records, and receipt confirmations
+          Secure sessions, privacy-ready records, and persistent receipt history
         </div>
       </section>
 
@@ -46,156 +98,135 @@ export function LoginPage() {
         </div>
 
         <div className="auth-tabs" role="tablist" aria-label="Authentication options">
-          <button className={activeTab === "signin" ? "active" : ""} type="button" onClick={() => setActiveTab("signin")}>
-            Sign In
-          </button>
-          <button className={activeTab === "masjid" ? "active" : ""} type="button" onClick={() => setActiveTab("masjid")}>
-            Register Masjid
-          </button>
-          <button className={activeTab === "donor" ? "active" : ""} type="button" onClick={() => setActiveTab("donor")}>
-            Donor Register
-          </button>
+          <button className={activeTab === "signin" ? "active" : ""} type="button" onClick={() => { setActiveTab("signin"); setError(""); }}>Sign In</button>
+          <button className={activeTab === "masjid" ? "active" : ""} type="button" onClick={() => { setActiveTab("masjid"); setError(""); }}>Register Masjid</button>
+          <button className={activeTab === "donor" ? "active" : ""} type="button" onClick={() => { setActiveTab("donor"); setError(""); }}>Donor Register</button>
         </div>
 
-        {activeTab === "signin" ? <SignInForm setActiveTab={setActiveTab} setToast={setToast} /> : null}
-        {activeTab === "masjid" ? <MasjidRegistrationForm /> : null}
-        {activeTab === "donor" ? <DonorRegistrationForm /> : null}
+        {error ? <div className="auth-error" role="alert">{error}</div> : null}
+
+        {activeTab === "signin" ? (
+          <form onSubmit={(event) => { event.preventDefault(); void runAuth(() => login(signin.email, signin.password)); }}>
+            <label>
+              <span>Email Address</span>
+              <div className="input-icon"><Mail size={18} /><input required autoComplete="email" value={signin.email} onChange={(event) => setSignin((current) => ({ ...current, email: event.target.value }))} placeholder="admin@masjid.org" type="email" /></div>
+            </label>
+            <label>
+              <span>Password</span>
+              <div className="input-icon"><Lock size={18} /><input required minLength={8} autoComplete="current-password" value={signin.password} onChange={(event) => setSignin((current) => ({ ...current, password: event.target.value }))} placeholder="Password" type="password" /></div>
+            </label>
+            <div className="login-options">
+              <label><input type="checkbox" defaultChecked /> Remember this device</label>
+              <button type="button" onClick={() => setToast("Password reset email service will be available after email provider setup.")}>Forgot password?</button>
+            </div>
+            <button className="primary-button full" disabled={submitting} type="submit">{submitting ? "Signing in..." : "Sign In"}<ArrowRight size={18} /></button>
+            <button className="secondary-button full" disabled type="button" title="Google provider setup required">Continue with Google</button>
+            <div className="auth-ctas">
+              <button type="button" onClick={() => setActiveTab("masjid")}>New Masjid? Register your Masjid</button>
+              <button type="button" onClick={() => setActiveTab("donor")}>Donor? Create donor account</button>
+            </div>
+          </form>
+        ) : null}
+
+        {activeTab === "masjid" ? (
+          <MasjidRegistrationForm
+            value={masjidForm}
+            submitting={submitting}
+            onChange={setMasjidForm}
+            onSubmit={(event) => { event.preventDefault(); void runAuth(() => registerMasjid(masjidForm)); }}
+          />
+        ) : null}
+
+        {activeTab === "donor" ? (
+          <DonorRegistrationForm
+            value={donorForm}
+            masjids={masjids}
+            submitting={submitting}
+            onChange={setDonorForm}
+            onSubmit={(event) => { event.preventDefault(); void runAuth(() => registerDonor(donorForm)); }}
+          />
+        ) : null}
       </section>
       {toast ? <Toast message={toast} onClose={() => setToast("")} /> : null}
     </main>
   );
 }
 
-function SignInForm({
-  setActiveTab,
-  setToast,
+function MasjidRegistrationForm({
+  value,
+  submitting,
+  onChange,
+  onSubmit,
 }: {
-  setActiveTab: (tab: AuthTab) => void;
-  setToast: (message: string) => void;
+  value: MasjidRegistrationInput;
+  submitting: boolean;
+  onChange: (value: MasjidRegistrationInput) => void;
+  onSubmit: (event: FormEvent) => void;
+}) {
+  const field = (name: keyof MasjidRegistrationInput) => ({
+    value: value[name] ?? "",
+    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange({ ...value, [name]: event.target.value }),
+  });
+
+  return (
+    <form className="registration-form" onSubmit={onSubmit}>
+      <div className="form-grid two">
+        <AuthField icon={Building2} label="Masjid name" placeholder="Masjid Al-Furqan" {...field("masjidName")} />
+        <AuthField icon={Globe2} label="Country" placeholder="Pakistan" {...field("country")} />
+        <AuthField icon={MapPin} label="City" placeholder="Islamabad" {...field("city")} />
+        <AuthField icon={MapPin} label="Address" placeholder="Community address" {...field("address")} />
+        <AuthField icon={Clock3} label="Timezone" placeholder="Asia/Karachi" {...field("timezone")} />
+        <label><span>Prayer calculation method</span><select {...field("calculationMethod")}><option>ISNA</option><option>MWL</option><option>Umm al-Qura</option><option>Karachi</option></select></label>
+        <label><span>Asr method</span><select {...field("asrMethod")}><option>Standard</option><option>Hanafi</option></select></label>
+        <AuthField icon={UserRound} label="Admin name" placeholder="Admin full name" {...field("adminName")} />
+        <AuthField icon={Mail} label="Admin email" placeholder="admin@masjid.org" type="email" {...field("adminEmail")} />
+        <AuthField icon={Lock} label="Password" placeholder="Minimum 8 characters" type="password" minLength={8} {...field("password")} />
+      </div>
+      <button className="primary-button full" disabled={submitting} type="submit">{submitting ? "Creating workspace..." : "Create Masjid Workspace"}<ArrowRight size={18} /></button>
+    </form>
+  );
+}
+
+function DonorRegistrationForm({
+  value,
+  masjids,
+  submitting,
+  onChange,
+  onSubmit,
+}: {
+  value: DonorRegistrationInput;
+  masjids: Masjid[];
+  submitting: boolean;
+  onChange: (value: DonorRegistrationInput) => void;
+  onSubmit: (event: FormEvent) => void;
 }) {
   return (
-    <>
-      <label>
-        <span>Email Address</span>
-        <div className="input-icon">
-          <Mail size={18} />
-          <input placeholder="imam@masjid.org" type="email" />
-        </div>
-      </label>
-      <label>
-        <span>Password</span>
-        <div className="input-icon">
-          <Lock size={18} />
-          <input placeholder="Password" type="password" />
-        </div>
-      </label>
-      <div className="login-options">
-        <label><input type="checkbox" defaultChecked /> Remember this device</label>
-        <button type="button" onClick={() => setToast("Password reset link sent to your email.")}>Forgot password?</button>
-      </div>
-      <Link className="primary-button full" to="/dashboard">
-        Sign In as Admin
-        <ArrowRight size={18} />
-      </Link>
-      <Link className="secondary-button full" to="/donor-portal">
-        Continue as Donor
-      </Link>
-      <button className="secondary-button full" type="button" onClick={() => setToast("Google sign-in is ready for provider connection.")}>Continue with Google</button>
-      <div className="auth-ctas">
-        <button type="button" onClick={() => setActiveTab("masjid")}>New Masjid? Register your Masjid</button>
-        <button type="button" onClick={() => setActiveTab("donor")}>Donor? Create donor account</button>
-      </div>
-    </>
-  );
-}
-
-function MasjidRegistrationForm() {
-  return (
-    <div className="registration-form">
+    <form className="registration-form" onSubmit={onSubmit}>
       <div className="form-grid two">
-        <IconField icon={Building2} label="Masjid name" placeholder="Masjid Al-Furqan" />
-        <IconField icon={Globe2} label="Country" placeholder="United States" />
-        <IconField icon={MapPin} label="City" placeholder="Houston" />
-        <IconField icon={MapPin} label="Address" placeholder="123 Community Drive" />
-        <IconField icon={Clock3} label="Timezone" placeholder="America/Chicago" />
-        <label>
-          <span>Prayer calculation method</span>
-          <select defaultValue="ISNA">
-            <option>ISNA</option>
-            <option>MWL</option>
-            <option>Umm al-Qura</option>
-            <option>Karachi</option>
-          </select>
-        </label>
-        <label>
-          <span>Asr method</span>
-          <select defaultValue="Hanafi">
-            <option>Standard</option>
-            <option>Hanafi</option>
-          </select>
-        </label>
-        <IconField icon={UserRound} label="Admin name" placeholder="Imam Abdullah" />
-        <IconField icon={Mail} label="Admin email" placeholder="admin@masjid.org" />
-        <IconField icon={Lock} label="Password" placeholder="Create password" type="password" />
+        <AuthField icon={UserRound} label="Full name" placeholder="Aisha Rahman" value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} />
+        <AuthField icon={Mail} label="Email" placeholder="donor@email.com" type="email" value={value.email} onChange={(event) => onChange({ ...value, email: event.target.value })} />
+        <AuthField icon={Phone} label="Phone" placeholder="+92 300 0000000" type="tel" value={value.phone} onChange={(event) => onChange({ ...value, phone: event.target.value })} />
+        <AuthField icon={Lock} label="Password" placeholder="Minimum 8 characters" type="password" minLength={8} value={value.password} onChange={(event) => onChange({ ...value, password: event.target.value })} />
+        <label className="wide"><span>Select masjid</span><select required value={value.masjidId} onChange={(event) => onChange({ ...value, masjidId: event.target.value })}>{masjids.map((masjid) => <option key={masjid.id} value={masjid.id}>{masjid.name} - {masjid.location}</option>)}</select></label>
       </div>
-      <label className="upload-field">
-        <Upload size={18} />
-        <span>Upload logo</span>
-        <input type="file" />
-      </label>
-      <Link className="primary-button full" to="/dashboard">
-        Create Masjid Workspace
-        <ArrowRight size={18} />
-      </Link>
-    </div>
+      <button className="primary-button full" disabled={submitting || !value.masjidId} type="submit">{submitting ? "Creating account..." : "Create Donor Account"}<ArrowRight size={18} /></button>
+    </form>
   );
 }
 
-function DonorRegistrationForm() {
-  return (
-    <div className="registration-form">
-      <div className="form-grid two">
-        <IconField icon={UserRound} label="Full name" placeholder="Aisha Rahman" />
-        <IconField icon={Mail} label="Email" placeholder="donor@email.com" />
-        <IconField icon={Phone} label="Phone" placeholder="+1 713 555 0100" />
-        <IconField icon={Lock} label="Password" placeholder="Create password" type="password" />
-        <label className="wide">
-          <span>Select masjid</span>
-          <select defaultValue={masjids[0].id}>
-            {masjids.map((masjid) => (
-              <option key={masjid.id} value={masjid.id}>
-                {masjid.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <Link className="primary-button full" to="/donor-portal">
-        Create Donor Account
-        <ArrowRight size={18} />
-      </Link>
-    </div>
-  );
-}
-
-function IconField({
-  icon: Icon,
-  label,
-  placeholder,
-  type = "text",
-}: {
-  icon: ElementType;
+function AuthField({ icon: Icon, label, minLength, ...input }: {
+  icon: typeof UserRound;
   label: string;
   placeholder: string;
   type?: string;
+  minLength?: number;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <label>
       <span>{label}</span>
-      <div className="input-icon">
-        <Icon size={18} />
-        <input placeholder={placeholder} type={type} />
-      </div>
+      <div className="input-icon"><Icon size={18} /><input required minLength={minLength} autoComplete="off" {...input} /></div>
     </label>
   );
 }
