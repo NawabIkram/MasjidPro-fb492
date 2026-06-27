@@ -294,6 +294,27 @@ textarea:focus-visible {
   color: #64748b;
 }
 
+.role-badge {
+  min-width: 130px;
+  align-self: stretch;
+  align-content: center;
+  border-left: 1px solid #e2e8f0;
+  padding-left: 16px;
+}
+
+.role-badge strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.logout-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -1412,6 +1433,60 @@ input[type="checkbox"] {
   background: white;
   padding: 32px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.login-card form {
+  display: grid;
+  gap: 16px;
+}
+
+.auth-error {
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 750;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.settings-toggles {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.toggle-row,
+.mobile-role-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .login-card h2 {
